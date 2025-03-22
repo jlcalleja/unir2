@@ -1,0 +1,93 @@
+- name: Desplegar contenedores al AKS
+  hosts: localhost
+  tasks: 
+    - name: Configurar Kubernetes
+      set_fact:
+        kube_config: "/mnt/c/Users/Usuario/Desktop/Proyecto/Terraform/kube_config"
+    
+    - name: Desplegar Redis
+      kubernetes.core.k8s:
+        kubeconfig: "{{ kube_config }}"
+        definition:
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: redis
+            namespace: default
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: redis
+            template:
+              metadata:
+                labels:
+                  app: redis
+              spec:
+                containers:
+                  - name: redis
+                    image: jlcacr.azurecr.io/redis/redis:casopractico2
+                    ports:
+                      - containerPort: 6379
+                    env:
+                    - name: ALLOW_EMPTY_PASSWORD
+                      value: "yes"
+           
+    - name: Servicio Redis
+      kubernetes.core.k8s:
+        kubeconfig: "{{ kube_config }}"
+        definition:
+          apiVersion: v1
+          kind: Service
+          metadata: 
+            name: redis
+            namespace: default
+          spec:
+            ports:
+              - port: 6379
+            selector:
+              app: redis
+    
+    - name: Desplegar Azure Vote Front
+      kubernetes.core.k8s:
+        kubeconfig: "{{ kube_config }}"
+        definition:
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: azure-vote-front
+            namespace: default
+          spec: 
+            replicas: 1
+            selector:
+              matchLabels:
+                app: azure-vote-front
+            template:
+              metadata:
+                labels:
+                  app: azure-vote-front
+              spec:
+                containers:
+                - name: azure-vote-front
+                  image: jlcacr.azurecr.io/front/azure-vote-front:casopractico2
+                  ports:
+                    - containerPort: 80
+                  env:
+                    - name: REDIS
+                      value: redis
+
+    - name: Servicio Azure Vote Front
+      kubernetes.core.k8s:
+        kubeconfig: "{{ kube_config }}"
+        definition:
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: azure-vote-front
+            namespace: default
+          spec:
+            type: LoadBalancer
+            ports:
+              - port: 80
+            selector:
+              app: azure-vote-front

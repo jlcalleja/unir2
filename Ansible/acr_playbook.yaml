@@ -1,0 +1,55 @@
+- name: Configurar y desplegar servidor web en Podman
+  hosts: localhost
+  become: yes
+  become_user: "jlc"
+
+  vars:
+      acr_name: "jlcacr.azurecr.io"
+      acr_username: "jlcacr"
+      # EJECUTAR ESTO PARA OBTENER LA CONTRASEÑA az acr credential show --name jlcacr --query "passwords[0].value" --output tsv
+
+      
+  tasks:
+    - name: ACR Login 
+      containers.podman.podman_login:
+        registry: "{{ acr_name }}"
+        username: "{{acr_username }}"
+        password: "{{acr_password }}"
+
+    - name: Descargar imagen Nginx
+      containers.podman.podman_image:
+        name: "docker.io/nginx"
+        tag: "latest"
+
+    - name: Etiquetar imagen Nginx
+      become_user: "jlc"
+      command: podman tag docker.io/nginx:latest {{ acr_name }}/nginx/nginx:casopractico2
+
+    - name: Descargar imagen Redis
+      containers.podman.podman_image:
+        name: "mcr.microsoft.com/oss/bitnami/redis"
+        tag: "6.0.8"
+    
+    - name: Etiquetar imagen Redis
+      command: podman tag mcr.microsoft.com/oss/bitnami/redis:6.0.8 {{ acr_name }}/redis/redis:casopractico2
+
+    - name: Descargar imagen Azure-vote-front
+      command: podman build -t {{ acr_name }}/front/azure-vote-front:casopractico2 ./azure-voting-app-redis/azure-vote
+
+    - name: Subir Nginx al ACR
+      containers.podman.podman_image:
+        name: "{{ acr_name }}/nginx/nginx"
+        tag: "casopractico2"  
+        push: yes
+
+    - name: Subir Redis al ACR
+      containers.podman.podman_image:
+        name: "{{ acr_name }}/redis/redis"
+        tag: "casopractico2"  
+        push: yes
+
+    - name: Subir Azure-vote-front al ACR
+      containers.podman.podman_image:
+        name: "{{ acr_name }}/front/azure-vote-front"
+        tag: "casopractico2"  
+        push: yes

@@ -1,0 +1,33 @@
+- name: Desplegar Nginx con Podman
+  hosts: jlc_vm1
+  become: true
+  
+  vars:
+      acr_name: "jlcacr.azurecr.io"
+      acr_username: "jlcacr"
+      # acr_password: "BORRAR ANTES DE PASAR" # EJECUTAR ESTO PARA TENERLA az acr credential show --name jlcacr --query "passwords[0].value" --output tsv
+      nginx_image: "nginx/nginx:casopractico2"
+  tasks:
+    - name: Comprobar que Podman está instalado
+      ansible.builtin.apt:
+        name: podman
+        update_cache: yes
+        state: present
+    
+    - name: ACR Login
+      containers.podman.podman_login:
+        registry: "{{ acr_name }}"
+        username: "{{acr_username }}"
+        password: "{{acr_password }}"
+
+    - name: Traer Nginx del ACR
+      containers.podman.podman_image:
+        name: "{{ acr_name }}/{{ nginx_image }}"
+    
+    - name: Ejecutar contenedor
+      containers.podman.podman_container:
+        name: nginx
+        image: "{{ acr_name }}/{{ nginx_image }}"
+        state: started
+        ports:
+          - "80:80"
