@@ -5,8 +5,8 @@
   vars:
       acr_name: "jlcacr.azurecr.io"
       acr_username: "jlcacr"
-      # acr_password: "BORRAR ANTES DE PASAR" # EJECUTAR ESTO PARA TENERLA az acr credential show --name jlcacr --query "passwords[0].value" --output tsv
       nginx_image: "nginx/nginx:casopractico2"
+      
   tasks:
     - name: Comprobar que Podman está instalado
       ansible.builtin.apt:

@@ -6,8 +6,6 @@
   vars:
       acr_name: "jlcacr.azurecr.io"
       acr_username: "jlcacr"
-      # EJECUTAR ESTO PARA OBTENER LA CONTRASEÑA az acr credential show --name jlcacr --query "passwords[0].value" --output tsv
-
       
   tasks:
     - name: ACR Login 
